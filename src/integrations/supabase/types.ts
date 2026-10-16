@@ -354,6 +354,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_tutor_busy_slots: {
+        Args: { _tutor_id: string; _from: string; _to: string }
+        Returns: { starts_at: string; duration_minutes: number }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

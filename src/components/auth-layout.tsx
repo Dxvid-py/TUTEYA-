@@ -1,4 +1,3 @@
-import logo from "@/assets/tuteya-logo.png.asset.json";
 import { Logo, ThemeToggle } from "@/components/brand";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -8,8 +7,10 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-secondary p-12 lg:flex">
         <div className="pointer-events-none absolute inset-0 bg-hero-glow" />
-        <div className="relative rounded-3xl bg-logo-surface p-10 shadow-soft">
-          <img src={logo.url} alt="Tuteya — Tu tutor, a un clic" className="mx-auto w-64" />
+        <div className="relative flex flex-col items-center rounded-3xl bg-card p-10 shadow-soft">
+          <img src="/tuteya-mark.svg" alt="" width={112} height={112} className="size-28" />
+          <p className="mt-4 font-display text-4xl font-bold text-navy">Tuteya</p>
+          <p className="text-sm text-muted-foreground">Tu tutor, a un clic</p>
         </div>
         <blockquote className="relative text-2xl font-bold leading-snug text-secondary-foreground">
           “Aprender nos conecta.”
@@ -31,7 +32,12 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Acceso con Google desactivado temporalmente. Para reactivarlo: VITE_ENABLE_GOOGLE_AUTH="true"
+// (y habilitar el proveedor en Supabase > Authentication > Providers > Google).
+export const GOOGLE_AUTH_ENABLED = import.meta.env["VITE_ENABLE_GOOGLE_AUTH"] === "true";
+
 export function GoogleButton({ label = "Continuar con Google" }: { label?: string }) {
+  if (!GOOGLE_AUTH_ENABLED) return null;
   return (
     <button
       type="button"

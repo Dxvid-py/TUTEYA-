@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Monitor, Moon, Sun, Star } from "lucide-react";
-import mark from "@/assets/tuteya-mark.png.asset.json";
 import { useTheme, type ThemePref } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL } from "@/lib/format";
@@ -8,7 +7,7 @@ import { STATUS_LABEL } from "@/lib/format";
 export function Logo({ className, compact }: { className?: string; compact?: boolean }) {
   return (
     <Link to="/" className={cn("flex items-center gap-2.5", className)} aria-label="Tuteya, inicio">
-      <img src={mark.url} alt="" className="h-8 w-auto" />
+      <img src="/tuteya-mark.svg" alt="" width={32} height={32} className="h-8 w-auto" />
       {!compact && <span className="text-xl font-extrabold tracking-tight text-navy">Tuteya</span>}
     </Link>
   );

@@ -36,11 +36,15 @@ export function initials(name: string) {
   );
 }
 
-/** Builds hourly slots for a date from weekly availability blocks. */
+export type BusyRange = { starts_at: string; duration_minutes: number };
+
+const SLOT_MINUTES = 60;
+
+/** Builds hourly slots for a date from weekly availability blocks, hiding slots that overlap a busy range. */
 export function slotsForDate(
   date: Date,
   availability: { weekday: number; start_time: string; end_time: string }[],
-  taken: string[],
+  busy: BusyRange[] = [],
 ): Date[] {
   const out: Date[] = [];
   const blocks = availability.filter((a) => a.weekday === date.getDay());
@@ -51,7 +55,13 @@ export function slotsForDate(
       const d = new Date(date);
       d.setHours(h, 0, 0, 0);
       if (d.getTime() <= Date.now()) continue;
-      if (taken.some((t) => new Date(t).getTime() === d.getTime())) continue;
+      const s = d.getTime();
+      const e = s + SLOT_MINUTES * 60_000;
+      const overlaps = busy.some((b) => {
+        const bs = new Date(b.starts_at).getTime();
+        return s < bs + b.duration_minutes * 60_000 && e > bs;
+      });
+      if (overlaps) continue;
       out.push(d);
     }
   }

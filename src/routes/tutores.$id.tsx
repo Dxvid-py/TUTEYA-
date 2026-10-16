@@ -58,7 +58,7 @@ function TutorPage() {
   const [busy, setBusy] = useState(false);
 
   const availDays = new Set(data!.availability.map((a) => a.weekday));
-  const slots = date ? slotsForDate(date, data!.availability, []) : [];
+  const slots = date ? slotsForDate(date, data!.availability, data!.busy) : [];
   const isOwn = user?.id === t.user_id;
 
   async function book() {
@@ -76,7 +76,7 @@ function TutorPage() {
     });
     setBusy(false);
     if (error) {
-      if (error.code === "23505") { toast.error("Ese horario acaba de ser reservado. Elige otro."); return; }
+      if (error.code === "23505" || error.code === "23P01") { toast.error("Ese horario acaba de ser reservado. Elige otro."); return; }
       { toast.error("No se pudo enviar la solicitud: " + error.message); return; }
     }
     qc.invalidateQueries({ queryKey: ["bookings"] });

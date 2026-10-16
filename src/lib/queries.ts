@@ -64,7 +64,9 @@ export const tutorDetailQuery = (id: string) =>
   queryOptions({
     queryKey: ["tutor", id],
     queryFn: async () => {
-      const [{ data: t, error }, { data: av }, { data: rv }] = await Promise.all([
+      const from = new Date();
+      const to = new Date(from.getTime() + 60 * 86_400_000);
+      const [{ data: t, error }, { data: av }, { data: rv }, busyRes] = await Promise.all([
         supabase.from("tutor_profiles").select(TUTOR_SELECT).eq("user_id", id).maybeSingle(),
         supabase.from("tutor_availability").select("weekday, start_time, end_time").eq("tutor_id", id).order("weekday"),
         supabase
@@ -72,9 +74,11 @@ export const tutorDetailQuery = (id: string) =>
           .select("id, rating, comment, created_at, profiles(full_name)")
           .eq("tutor_id", id)
           .order("created_at", { ascending: false }),
+        // Si la migración aún no se aplicó, la RPC falla: se ignora y el trigger de BD sigue protegiendo.
+        supabase.rpc("get_tutor_busy_slots", { _tutor_id: id, _from: from.toISOString(), _to: to.toISOString() }),
       ]);
       if (error) throw error;
       if (!t) return null;
-      return { tutor: mapTutor(t), availability: av ?? [], reviews: rv ?? [] };
+      return { tutor: mapTutor(t), availability: av ?? [], reviews: rv ?? [], busy: busyRes.error ? [] : (busyRes.data ?? []) };
     },
   });

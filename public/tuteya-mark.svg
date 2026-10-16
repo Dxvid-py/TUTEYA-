@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Tuteya">
+  <title>Tuteya</title>
+  <g fill="#169385">
+    <circle cx="14" cy="10" r="6"/>
+    <circle cx="50" cy="10" r="6"/>
+  </g>
+  <path d="M10 56V34c0-9 5-14 11-14s11 5 11 12c0-7 5-12 11-12s11 5 11 14v22"
+        fill="none" stroke="#169385" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32 54V38c-4-3-9-4-14-3v14c5-1 10 0 14 5Zm0 0V38c4-3 9-4 14-3v14c-5-1-10 0-14 5Z"
+        fill="#fff" stroke="#0d6b60" stroke-width="2" stroke-linejoin="round"/>
+</svg>

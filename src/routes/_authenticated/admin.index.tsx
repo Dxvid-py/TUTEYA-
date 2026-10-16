@@ -17,6 +17,7 @@ function AdminHome() {
   const { data } = useQuery({
     queryKey: ["admin-stats"],
     queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const c = async (t: "profiles" | "tutor_profiles" | "bookings" | "subjects", f?: (q: any) => any) => {
         let q = supabase.from(t).select("*", { count: "exact", head: true });
         if (f) q = f(q);
