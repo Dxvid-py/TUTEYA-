@@ -1,3 +1,10 @@
+-- #####################################################################
+-- # ⚠️  ADVERTENCIA: ESTE ARCHIVO ES DESTRUCTIVO (DROP TABLE ... CASCADE).
+-- # Solo sirve para crear una base NUEVA y VACÍA. NO lo ejecutes sobre una
+-- # base con datos. Para la base existente usa:
+-- #   1) supabase/diagnostico_solo_lectura.sql
+-- #   2) supabase/migrations/20261016_hardening_incremental.sql
+-- #####################################################################
 -- =====================================================
 -- TUTEYA · Base de datos completa (Supabase > SQL Editor > Run)
 -- Antes: Authentication > Providers > Email > desactiva "Confirm email"
