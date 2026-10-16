@@ -80,6 +80,11 @@ function Index() {
                 <Link to="/registro" search={{ rol: "tutor" }}>Quiero enseñar</Link>
               </Button>
             </div>
+            <div className="hero-proof-row mt-7 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /> Perfiles revisados</span>
+              <span className="inline-flex items-center gap-2"><Video className="size-4 text-primary" /> Virtual o presencial</span>
+              <span className="inline-flex items-center gap-2"><CalendarCheck className="size-4 text-primary" /> Reserva a tu ritmo</span>
+            </div>
           </div>
           <div className="relative">
             <div className="overflow-hidden rounded-[2rem] border shadow-lift">

@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { AuthLayout, GoogleButton } from "@/components/auth-layout";
+import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,14 +58,6 @@ function LoginPage() {
       <p className="mt-2 text-muted-foreground">
         {resetMode ? "Te enviaremos un enlace a tu correo." : "Entra a tu cuenta para continuar aprendiendo."}
       </p>
-      {!resetMode && (
-        <>
-          <div className="mt-8"><GoogleButton /></div>
-          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> o con tu correo <div className="h-px flex-1 bg-border" />
-          </div>
-        </>
-      )}
       <form onSubmit={submit} className={resetMode ? "mt-8 space-y-4" : "space-y-4"} noValidate>
         <div className="space-y-1.5">
           <Label htmlFor="email">Correo electrónico</Label>

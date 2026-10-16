@@ -174,3 +174,37 @@
 
 /* Identidad TUTEYA: titulares serif elegantes */
 h1, h2 { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+
+/* Motion & visual polish — TUTEYA */
+html { scroll-behavior: smooth; }
+::selection { background: oklch(0.78 0.12 280 / 35%); color: var(--foreground); }
+:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button, [role="button"] { transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease, border-color .2s ease; }
+button:not(:disabled):active, [role="button"]:active { transform: translateY(1px) scale(.99); }
+main > section { animation: tuteya-enter .65s both; }
+main > section:nth-of-type(2) { animation-delay: .06s; }
+main > section:nth-of-type(3) { animation-delay: .1s; }
+main > section:nth-of-type(4) { animation-delay: .14s; }
+main > section:nth-of-type(5) { animation-delay: .18s; }
+main > section:nth-of-type(6) { animation-delay: .22s; }
+main a:not([class*="button"]):not([class*="Button"]) { text-underline-offset: 4px; }
+main .rounded-3xl, main .rounded-2xl { transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease; }
+main .rounded-2xl:hover { border-color: color-mix(in oklab, var(--primary) 28%, var(--border)); }
+main .shadow-soft:hover { box-shadow: var(--shadow-lift); }
+header { transition: background-color .25s ease, box-shadow .25s ease; }
+input, textarea, select { transition: border-color .2s ease, box-shadow .2s ease; }
+input:focus, textarea:focus, select:focus { box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 16%, transparent); }
+@keyframes tuteya-enter {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes tuteya-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.bg-hero-glow { background-image: var(--hero-glow), radial-gradient(40% 50% at 5% 80%, oklch(0.75 0.11 280 / 10%), transparent 75%); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

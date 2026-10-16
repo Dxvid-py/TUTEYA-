@@ -115,7 +115,7 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Tuteya · Tu tutor, a un clic.
+        © {new Date().getFullYear()} Tuteya · Tu tutor, a un clic. <span className="mx-1">·</span> Desarrollada por <span className="font-semibold text-foreground">Emanuel Perez</span>.
       </div>
     </footer>
   );

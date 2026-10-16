@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookOpen, GraduationCap, Loader2, MailCheck } from "lucide-react";
 import { z } from "zod";
-import { AuthLayout, GoogleButton } from "@/components/auth-layout";
+import { AuthLayout } from "@/components/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -135,14 +135,6 @@ function RegisterPage() {
           {busy && <Loader2 className="size-4 animate-spin" />} Crear cuenta
         </Button>
       </form>
-      {role === "student" && (
-        <>
-          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" /> o <div className="h-px flex-1 bg-border" />
-          </div>
-          <GoogleButton label="Registrarme con Google" />
-        </>
-      )}
       <p className="mt-8 text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta? <Link to="/login" className="font-semibold text-primary hover:underline">Inicia sesión</Link>
       </p>
