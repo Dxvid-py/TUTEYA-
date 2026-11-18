@@ -17,7 +17,6 @@ const VERIFIED_PORTRAITS = [
   "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400",
 ];
 
-// Paleta esmeralda y dorado acorde a Tuteya
 const BRAND_GRADIENTS: [string, string][] = [
   ["#047857", "#059669"],
   ["#065f46", "#d97706"],

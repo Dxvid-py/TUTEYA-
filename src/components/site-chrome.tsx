@@ -6,9 +6,10 @@ import {
   LogOut,
   UserCheck,
   BookOpen,
-  Sparkles,
+  Video,
   Sun,
   Moon,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "../integrations/supabase/client";
 
@@ -18,11 +19,27 @@ interface ActiveDemoUser {
   fullName: string;
 }
 
+export const DEMO_CREDENTIALS = {
+  student: {
+    email: "estudiante.demo@tuteya.co",
+    password: "TuteyaDemo2026!",
+    route: "/estudiante",
+    fullName: "Valeria Gómez",
+  },
+  tutor: {
+    email: "profe.demo@tuteya.co",
+    password: "TuteyaDemo2026!",
+    route: "/tutor",
+    fullName: "Prof. Carlos Mendoza",
+  },
+} as const;
+
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<ActiveDemoUser | null>(null);
+  const [switchingRole, setSwitchingRole] = useState<"student" | "tutor" | null>(null);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -92,6 +109,31 @@ export function SiteHeader() {
     };
   }, []);
 
+  async function handleDirectProfileAccess(role: "student" | "tutor") {
+    setSwitchingRole(role);
+    setMobileOpen(false);
+    const target = DEMO_CREDENTIALS[role];
+
+    try {
+      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: target.email,
+        password: target.password,
+      });
+
+      if (error) {
+        navigate({ to: "/login" as any });
+        return;
+      }
+
+      navigate({ to: target.route as any });
+    } catch {
+      navigate({ to: "/login" as any });
+    } finally {
+      setSwitchingRole(null);
+    }
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut();
     setCurrentUser(null);
@@ -110,14 +152,14 @@ export function SiteHeader() {
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
           ? "bg-background/85 backdrop-blur-lg border-b border-border/80 shadow-sm py-2.5"
-          : "bg-background/65 backdrop-blur-md border-b border-border/40 py-3.5"
+          : "bg-background/70 backdrop-blur-md border-b border-border/40 py-3.5"
       }`}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         {/* Logo original Tuteya */}
         <Link
           to={"/" as any}
-          className="group flex items-center gap-2.5 focus:outline-none"
+          className="group flex items-center gap-2.5 shrink-0 focus:outline-none"
         >
           <img
             src="/tuteya-mark.svg"
@@ -129,15 +171,15 @@ export function SiteHeader() {
           </span>
         </Link>
 
-        {/* Navegación Desktop dinámica */}
-        <nav className="hidden md:flex items-center gap-1 rounded-full border border-border/70 bg-muted/60 p-1">
+        {/* Navegación central */}
+        <nav className="hidden xl:flex items-center gap-1 rounded-full border border-border/70 bg-muted/60 p-1">
           {navItems.map((item) => {
             const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
             return (
               <Link
                 key={item.to}
                 to={item.to as any}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${
                   active
                     ? "bg-background text-emerald-700 dark:text-emerald-400 font-semibold shadow-xs"
                     : "text-muted-foreground hover:text-foreground"
@@ -147,60 +189,95 @@ export function SiteHeader() {
               </Link>
             );
           })}
+          <Link
+            to={"/clase-demo" as any}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all ${
+              pathname === "/clase-demo"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
+            }`}
+          >
+            <Video className="h-3.5 w-3.5" />
+            Clase en Vivo
+          </Link>
         </nav>
 
-        {/* Controles derecha */}
-        <div className="hidden md:flex items-center gap-2.5">
+        {/* Acceso Directo a Perfiles + Sesión */}
+        <div className="hidden md:flex items-center gap-2">
+          {/* Botón directo Clase Demo */}
+          <Link
+            to={"/clase-demo" as any}
+            className="xl:hidden inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-500/20 transition-colors"
+          >
+            <Video className="h-3.5 w-3.5" />
+            Clase Demo
+          </Link>
+
+          {/* Acceso directo 1 clic Estudiante */}
+          <button
+            type="button"
+            disabled={switchingRole !== null}
+            onClick={() => handleDirectProfileAccess("student")}
+            title="Entrar directo al perfil de Estudiante Demo"
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+              currentUser?.role === "student"
+                ? "border-emerald-600 bg-emerald-600/15 text-emerald-800 dark:text-emerald-300"
+                : "border-border bg-background text-foreground hover:border-emerald-600/50 hover:text-emerald-700"
+            }`}
+          >
+            {switchingRole === "student" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-700" />
+            ) : (
+              <UserCheck className="h-3.5 w-3.5 text-emerald-700" />
+            )}
+            <span>Estudiante</span>
+          </button>
+
+          {/* Acceso directo 1 clic Profesor */}
+          <button
+            type="button"
+            disabled={switchingRole !== null}
+            onClick={() => handleDirectProfileAccess("tutor")}
+            title="Entrar directo al perfil de Profesor Demo"
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+              currentUser?.role === "tutor"
+                ? "bg-emerald-800 text-white ring-2 ring-amber-400/60"
+                : "bg-emerald-700 text-white hover:bg-emerald-800"
+            }`}
+          >
+            {switchingRole === "tutor" ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <BookOpen className="h-3.5 w-3.5 text-amber-300" />
+            )}
+            <span>Profesor</span>
+          </button>
+
           <button
             type="button"
             onClick={toggleTheme}
             aria-label="Cambiar tema"
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
           >
-            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {darkMode ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
           </button>
 
           {currentUser ? (
-            <div className="flex items-center gap-2">
-              <Link
-                to={(currentUser.role === "tutor" ? "/profesor" : "/estudiante") as any}
-                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors"
-              >
-                {currentUser.role === "tutor" ? (
-                  <BookOpen className="h-3.5 w-3.5" />
-                ) : (
-                  <UserCheck className="h-3.5 w-3.5" />
-                )}
-                <span>
-                  {currentUser.role === "tutor" ? "Panel Profe" : "Panel Estudiante"} ·{" "}
-                  {currentUser.fullName.split(" ")[0]}
-                </span>
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                Salir
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              title={`Cerrar sesión (${currentUser.fullName})`}
+              className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
           ) : (
-            <>
-              <Link
-                to={"/login" as any}
-                className="rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-              >
-                Ingresar
-              </Link>
-              <Link
-                to={"/login" as any}
-                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-emerald-800 transition-all"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
-                Demo Profe / Estudiante
-              </Link>
-            </>
+            <Link
+              to={"/login" as any}
+              className="rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Ingresar
+            </Link>
           )}
         </div>
 
@@ -229,32 +306,41 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+            <Link
+              to={"/clase-demo" as any}
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2 rounded-xl bg-amber-500/15 px-3 py-2 text-sm font-semibold text-amber-800 dark:text-amber-300"
+            >
+              <Video className="h-4 w-4" />
+              Entrar a Clase Virtual Demo en Vivo
+            </Link>
             <hr className="my-1 border-border" />
-            {currentUser ? (
-              <>
-                <Link
-                  to={(currentUser.role === "tutor" ? "/profesor" : "/estudiante") as any}
-                  onClick={() => setMobileOpen(false)}
-                  className="rounded-xl bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300"
-                >
-                  Mi panel ({currentUser.role === "tutor" ? "Profesor" : "Estudiante"})
-                </Link>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="rounded-xl px-3 py-2 text-left text-sm font-medium text-destructive"
-                >
-                  Cerrar sesión
-                </button>
-              </>
-            ) : (
-              <Link
-                to={"/login" as any}
-                onClick={() => setMobileOpen(false)}
-                className="rounded-xl bg-emerald-700 px-3 py-2.5 text-center text-sm font-semibold text-white"
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => handleDirectProfileAccess("student")}
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-600/40 bg-emerald-500/10 px-3 py-2.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300"
               >
-                Acceso Rápido Demo (Profe / Estudiante)
-              </Link>
+                <UserCheck className="h-4 w-4" />
+                Perfil Estudiante
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDirectProfileAccess("tutor")}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-2.5 text-xs font-semibold text-white"
+              >
+                <BookOpen className="h-4 w-4 text-amber-300" />
+                Perfil Profesor
+              </button>
+            </div>
+            {currentUser && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="mt-1 rounded-xl px-3 py-2 text-left text-xs font-medium text-destructive"
+              >
+                Cerrar sesión ({currentUser.fullName})
+              </button>
             )}
           </div>
         </div>
@@ -270,18 +356,18 @@ export function SiteFooter() {
         <div className="flex items-center gap-2">
           <img src="/tuteya-mark.svg" alt="Tuteya" className="h-6 w-6 object-contain" />
           <span className="font-medium text-foreground">
-            © {new Date().getFullYear()} Tuteya Colombia · Tarifas en COP
+            © {new Date().getFullYear()} Tuteya Colombia · Precios en COP
           </span>
         </div>
         <div className="flex items-center gap-5">
           <Link to={"/tutores" as any} className="hover:text-foreground transition-colors">
             Tutores
           </Link>
+          <Link to={"/clase-demo" as any} className="hover:text-foreground transition-colors">
+            Clase Virtual Demo
+          </Link>
           <Link to={"/como-funciona" as any} className="hover:text-foreground transition-colors">
             Cómo funciona
-          </Link>
-          <Link to={"/ensenar" as any} className="hover:text-foreground transition-colors">
-            Enseñar
           </Link>
         </div>
       </div>
