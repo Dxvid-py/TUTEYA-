@@ -1,85 +1,242 @@
-import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { LayoutDashboard, Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Logo, ThemeToggle } from "@/components/brand";
-import { homeForRole, useAuth } from "@/lib/auth";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import {
+  GraduationCap,
+  Menu,
+  X,
+  Sparkles,
+  LogOut,
+  UserCheck,
+  BookOpen,
+  Zap,
+} from "lucide-react";
+import { supabase } from "../integrations/supabase/client";
+
+interface ActiveDemoUser {
+  email: string;
+  role: "student" | "tutor";
+  fullName: string;
+}
 
 export function SiteHeader() {
-  const { user, primaryRole } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<ActiveDemoUser | null>(null);
   const navigate = useNavigate();
-  const links = [
-    { to: "/tutores", label: "Encontrar tutor" },
-    { to: "/como-funciona", label: "Cómo funciona" },
-    { to: "/ensenar", label: "Enseñar en Tuteya" },
-  ] as const;
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 16);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadSession() {
+      const { data } = await supabase.auth.getSession();
+      const user = data.session?.user;
+      if (!mounted) return;
+      if (user) {
+        const metaRole =
+          (user.user_metadata?.role as "student" | "tutor") ||
+          (user.email?.includes("profe") ? "tutor" : "student");
+        setCurrentUser({
+          email: user.email || "",
+          role: metaRole,
+          fullName:
+            user.user_metadata?.full_name ||
+            (metaRole === "tutor" ? "Prof. Carlos Mendoza" : "Valeria Gómez"),
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    }
+
+    loadSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      if (user) {
+        const metaRole =
+          (user.user_metadata?.role as "student" | "tutor") ||
+          (user.email?.includes("profe") ? "tutor" : "student");
+        setCurrentUser({
+          email: user.email || "",
+          role: metaRole,
+          fullName:
+            user.user_metadata?.full_name ||
+            (metaRole === "tutor" ? "Prof. Carlos Mendoza" : "Valeria Gómez"),
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    setCurrentUser(null);
+    setMobileOpen(false);
+    navigate({ to: "/" as any });
+  }
+
+  const navItems = [
+    { to: "/", label: "Inicio" },
+    { to: "/tutores", label: "Explorar Profesores" },
+  ];
+
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-lg">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Logo />
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Principal">
-          {links.map((l) => (
-            <Link
-              key={l.to}
-              to={l.to}
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              activeProps={{ className: "text-foreground bg-muted" }}
-            >
-              {l.label}
-            </Link>
-          ))}
+    <header
+      className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "glass-header border-b border-slate-200/80 shadow-sm py-2.5"
+          : "bg-white/70 backdrop-blur-md border-b border-transparent py-4"
+      }`}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link to={"/" as any} className="group flex items-center gap-2.5 focus:outline-none">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
+            <GraduationCap className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xl font-extrabold tracking-tight text-slate-900">
+              Tuteya
+            </span>
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-600">
+              Tutorías en Colombia
+            </span>
+          </div>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-1.5 rounded-full bg-slate-100/90 p-1 border border-slate-200/70">
+          {navItems.map((item) => {
+            const active = pathname === item.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to as any}
+                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 ${
+                  active
+                    ? "bg-white text-blue-600 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+          <Link
+            to={"/tutores" as any}
+            className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
+          >
+            <Zap className="h-3.5 w-3.5 text-amber-500" />
+            Tutor YA
+          </Link>
         </nav>
-        <div className="hidden items-center gap-2 md:flex">
-          <ThemeToggle />
-          {user ? (
-            <Button onClick={() => navigate({ to: homeForRole(primaryRole) })} className="rounded-full">
-              <LayoutDashboard className="size-4" /> Mi panel
-            </Button>
+
+        <div className="hidden md:flex items-center gap-3">
+          {currentUser ? (
+            <div className="flex items-center gap-2.5">
+              <Link
+                to={(currentUser.role === "tutor" ? "/profesor" : "/estudiante") as any}
+                className="flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+              >
+                {currentUser.role === "tutor" ? (
+                  <BookOpen className="h-3.5 w-3.5" />
+                ) : (
+                  <UserCheck className="h-3.5 w-3.5" />
+                )}
+                <span>
+                  {currentUser.role === "tutor" ? "Panel Profe" : "Panel Estudiante"}:{" "}
+                  {currentUser.fullName.split(" ")[0]}
+                </span>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Cerrar sesión"
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Salir
+              </button>
+            </div>
           ) : (
             <>
-              <Button variant="ghost" asChild className="rounded-full">
-                <Link to="/login">Iniciar sesión</Link>
-              </Button>
-              <Button asChild className="rounded-full">
-                <Link to="/registro">Crear cuenta</Link>
-              </Button>
+              <Link
+                to={"/login" as any}
+                className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+              >
+                Iniciar sesión
+              </Link>
+              <Link
+                to={"/login" as any}
+                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:shadow-lg hover:brightness-110 transition-all"
+              >
+                <Sparkles className="h-4 w-4" />
+                Probar Demo
+              </Link>
             </>
           )}
         </div>
+
         <button
-          className="grid size-10 place-items-center rounded-full border md:hidden"
-          aria-label={open ? "Cerrar menú" : "Abrir menú"}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
+          type="button"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Abrir menú"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-700 md:hidden"
         >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-      {open && (
-        <div className="border-t bg-background px-4 pb-5 pt-3 md:hidden">
-          <nav className="flex flex-col gap-1">
-            {links.map((l) => (
-              <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="rounded-xl px-3 py-3 font-medium hover:bg-muted">
-                {l.label}
+
+      {mobileOpen && (
+        <div className="border-t border-slate-200 bg-white px-4 py-4 shadow-lg md:hidden animate-fade-up">
+          <div className="flex flex-col gap-2">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to as any}
+                onClick={() => setMobileOpen(false)}
+                className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                {item.label}
               </Link>
             ))}
-          </nav>
-          <div className="mt-3 flex items-center justify-between">
-            <ThemeToggle />
-            {user ? (
-              <Button asChild className="rounded-full">
-                <Link to={homeForRole(primaryRole)}>Mi panel</Link>
-              </Button>
+            <hr className="my-1 border-slate-100" />
+            {currentUser ? (
+              <>
+                <Link
+                  to={(currentUser.role === "tutor" ? "/profesor" : "/estudiante") as any}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-xl bg-blue-50 px-3 py-2.5 text-sm font-bold text-blue-700"
+                >
+                  Ir a mi panel ({currentUser.role === "tutor" ? "Profesor" : "Estudiante"})
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-xl bg-rose-50 px-3 py-2.5 text-left text-sm font-semibold text-rose-600"
+                >
+                  Cerrar sesión
+                </button>
+              </>
             ) : (
-              <div className="flex gap-2">
-                <Button variant="outline" asChild className="rounded-full">
-                  <Link to="/login">Entrar</Link>
-                </Button>
-                <Button asChild className="rounded-full">
-                  <Link to="/registro">Crear cuenta</Link>
-                </Button>
-              </div>
+              <Link
+                to={"/login" as any}
+                onClick={() => setMobileOpen(false)}
+                className="rounded-xl bg-blue-600 px-3 py-2.5 text-center text-sm font-bold text-white"
+              >
+                Acceso Rápido Demo (Profe / Estudiante)
+              </Link>
             )}
           </div>
         </div>
@@ -88,45 +245,26 @@ export function SiteHeader() {
   );
 }
 
-export function SiteFooter() {
+export function SiteChrome({ children }: { children: React.ReactNode }) {
   return (
-    <footer className="border-t bg-card">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-4">
-        <div className="md:col-span-2">
-          <Logo />
-          <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-            Aprender nos conecta. Tuteya une a estudiantes y tutores para clases virtuales o presenciales.
-          </p>
-        </div>
-        <div>
-          <h3 className="text-sm font-bold">Plataforma</h3>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/tutores" className="hover:text-foreground">Buscar tutores</Link></li>
-            <li><Link to="/como-funciona" className="hover:text-foreground">Cómo funciona</Link></li>
-            <li><Link to="/ensenar" className="hover:text-foreground">Enseñar en Tuteya</Link></li>
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-sm font-bold">Cuenta</h3>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/login" className="hover:text-foreground">Iniciar sesión</Link></li>
-            <li><Link to="/registro" className="hover:text-foreground">Crear cuenta</Link></li>
-          </ul>
-        </div>
-      </div>
-      <div className="border-t py-5 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Tuteya · Tu tutor, a un clic. <span className="mx-1">·</span> <span className="font-semibold text-foreground">Desarrollada por Emanuel Perez</span>
-      </div>
-    </footer>
-  );
-}
-
-export function PublicLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen flex-col">
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <SiteHeader />
       <main className="flex-1">{children}</main>
-      <SiteFooter />
+      <footer className="border-t border-slate-200 bg-white py-8 text-sm text-slate-500">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
+          <p className="font-medium text-slate-700">
+            © {new Date().getFullYear()} Tuteya Colombia · Todos los precios en Pesos Colombianos (COP).
+          </p>
+          <div className="flex items-center gap-4">
+            <Link to={"/tutores" as any} className="hover:text-blue-600 transition-colors">
+              Profesores
+            </Link>
+            <Link to={"/login" as any} className="hover:text-blue-600 transition-colors">
+              Acceso Demo
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
