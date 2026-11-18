@@ -1,0 +1,46 @@
+====================================================================
+TUTEYA — PAQUETE DE ARCHIVOS PARA REEMPLAZAR EN TU PROYECTO
+====================================================================
+
+CÓMO APLICARLO EN 1 PASO:
+1. Abre esta carpeta (TUTEYA-ARCHIVOS-REEMPLAZAR).
+2. Selecciona las carpetas: src, public, supabase y docs.
+3. Cópialas y pégalas dentro de la raíz de tu proyecto (TUTEYA--main),
+   eligiendo "Reemplazar los archivos en el destino" cuando Windows/Mac te lo pida.
+
+--------------------------------------------------------------------
+1. ARCHIVOS EXISTENTES QUE SE REEMPLAZAN (SOBRESCRIBEN - 6 archivos):
+--------------------------------------------------------------------
+- src/server.ts
+- src/routes/__root.tsx
+- src/routes/tutores.index.tsx
+- src/routes/_authenticated/estudiante.tsx
+- src/routes/_authenticated/tutor.index.tsx
+- src/components/booking-list.tsx
+
+--------------------------------------------------------------------
+2. ARCHIVOS NUEVOS QUE SE AGREGAN AUTOMÁTICAMENTE (15 archivos):
+(Son necesarios para que los 6 archivos reemplazados compilen sin errores)
+--------------------------------------------------------------------
+- src/services/interfaces.ts
+- src/services/tutor.service.ts
+- src/services/booking.service.ts
+- src/services/ai-tutor.service.ts
+- src/services/notification.service.ts
+- src/components/ai-tutor-assistant.tsx
+- src/components/express-tutor-radar.tsx
+- src/components/video-room-dialog.tsx
+- public/manifest.json
+- public/sw.js
+- supabase/migrations/20261117_tuteya_pro_features.sql
+- docs/PROPUESTA_COMERCIAL.md
+- docs/MANUAL_USUARIO.md
+- docs/MANUAL_SISTEMA.md
+- docs/METODOLOGIA_SCRUM.md
+
+--------------------------------------------------------------------
+3. BASE DE DATOS (SUPABASE):
+--------------------------------------------------------------------
+Abre Supabase -> SQL Editor -> pega y ejecuta el contenido de:
+supabase/migrations/20261117_tuteya_pro_features.sql
+(No borra tus datos actuales, solo agrega columnas y la tabla express_requests).
