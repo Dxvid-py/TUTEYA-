@@ -6,6 +6,7 @@ import { BadgeCheck, MapPin, Search, SearchX, SlidersHorizontal, Video, X } from
 import { PublicLayout } from "@/components/site-chrome";
 import { EmptyState, Stars } from "@/components/brand";
 import { TutorAvatar } from "@/components/tutor-avatar";
+import { AiTutorAssistant } from "@/components/ai-tutor-assistant";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -87,6 +88,9 @@ function TutorsPage() {
               className="h-10 flex-1 bg-transparent text-sm outline-none"
             />
           </div>
+          <div className="mt-6">
+            <AiTutorAssistant />
+          </div>
         </div>
       </section>
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr]">
@@ -132,7 +136,7 @@ function TutorsPage() {
           </Filter>
           {s.modalidad === "presencial" && (
             <Filter label="Ciudad">
-              <Input defaultValue={s.ciudad} onChange={(e) => set({ ciudad: e.target.value || undefined })} placeholder="Ej. Quito" className="rounded-xl" />
+              <Input defaultValue={s.ciudad} onChange={(e) => set({ ciudad: e.target.value || undefined })} placeholder="Ej. Barranquilla" className="rounded-xl" />
             </Filter>
           )}
           <Filter label={`Precio máximo por hora${s.max ? `: ${money(s.max)}` : ""}`}>

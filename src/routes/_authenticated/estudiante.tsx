@@ -1,15 +1,20 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarCheck, CalendarDays, Clock, Search, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarCheck, CalendarDays, Clock, Search, Sparkles, Video } from "lucide-react";
 import { Card, PageTitle, Stat } from "@/components/app-shell";
 import { EmptyState, StatusBadge } from "@/components/brand";
 import { BookingList } from "@/components/booking-list";
+import { AiTutorAssistant } from "@/components/ai-tutor-assistant";
+import { ExpressStudentWidget } from "@/components/express-tutor-radar";
+import { VideoRoomDialog } from "@/components/video-room-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useBookings } from "@/lib/bookings";
 import { dateTime, money } from "@/lib/format";
 import { tutorsQuery } from "@/lib/queries";
 import { TutorAvatar } from "@/components/tutor-avatar";
+import { BookingService } from "@/services/booking.service";
 
 export const Route = createFileRoute("/_authenticated/estudiante")({
   head: () => ({ meta: [{ title: "Mi panel — Tuteya" }, { name: "description", content: "Panel del estudiante." }] }),
@@ -20,6 +25,8 @@ function StudentDash() {
   const { user, fullName } = useAuth();
   const { data = [] } = useBookings("mine", user?.id);
   const { data: tutors = [] } = useQuery(tutorsQuery);
+  const [room, setRoom] = useState<{ url: string; title: string } | null>(null);
+
   const mine = data.filter((b) => b.student_id === user?.id);
   const upcoming = mine
     .filter((b) => ["pendiente", "confirmada"].includes(b.status) && new Date(b.starts_at) > new Date())
@@ -30,6 +37,11 @@ function StudentDash() {
   return (
     <>
       <PageTitle title={`Hola, ${fullName.split(" ")[0]}`} text="Esto es lo que tienes por delante." />
+
+      <div className="mb-6">
+        <ExpressStudentWidget onOpenRoom={(url, title) => setRoom({ url, title })} />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="relative overflow-hidden rounded-3xl bg-primary-deep p-7 text-primary-foreground lg:col-span-2">
           <p className="text-xs font-bold uppercase tracking-wider opacity-80">Próxima tutoría</p>
@@ -37,7 +49,24 @@ function StudentDash() {
             <>
               <h2 className="mt-3 text-2xl font-extrabold">{next.subject?.name ?? "Tutoría"} con {next.tutor?.profiles?.full_name}</h2>
               <p className="mt-2 flex items-center gap-2 opacity-90"><Clock className="size-4" /> {dateTime(next.starts_at)} · <span className="capitalize">{next.modality}</span></p>
-              <div className="mt-5 inline-block rounded-full bg-primary-foreground px-1"><StatusBadge status={next.status} /></div>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <div className="inline-block rounded-full bg-primary-foreground px-1"><StatusBadge status={next.status} /></div>
+                {next.status === "confirmada" && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() =>
+                      setRoom({
+                        url: BookingService.buildJitsiRoomUrl(next.id),
+                        title: `${next.subject?.name ?? "Tutoría"} con ${next.tutor?.profiles?.full_name ?? "Tutor"}`,
+                      })
+                    }
+                  >
+                    <Video className="size-4" /> Entrar a la sala virtual
+                  </Button>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -51,6 +80,10 @@ function StudentDash() {
           <Stat icon={CalendarDays} label="Próximas" value={upcoming.length} />
           <Stat icon={CalendarCheck} label="Completadas" value={completed} />
         </div>
+      </div>
+
+      <div className="mt-8">
+        <AiTutorAssistant />
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-3">
@@ -82,7 +115,12 @@ function StudentDash() {
           </Card>
         </section>
       </div>
+
+      <VideoRoomDialog
+        roomUrl={room?.url ?? null}
+        title={room?.title ?? "Sala Virtual TUTEYA"}
+        onClose={() => setRoom(null)}
+      />
     </>
   );
 }
-

@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, CalendarCheck, ClipboardList, Inbox, Star } from "lucide-react";
 import { PageTitle, RoleGate, Stat } from "@/components/app-shell";
 import { EmptyState } from "@/components/brand";
 import { BookingList } from "@/components/booking-list";
+import { ExpressTutorRadarReceiver } from "@/components/express-tutor-radar";
+import { VideoRoomDialog } from "@/components/video-room-dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -21,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/tutor/")({
 function TutorDash() {
   const { user, fullName } = useAuth();
   const { data = [] } = useBookings("mine", user?.id);
+  const [room, setRoom] = useState<{ url: string; title: string } | null>(null);
+
   const { data: tp } = useQuery({
     queryKey: ["my-tutor-profile", user?.id],
     queryFn: async () => (await supabase.from("tutor_profiles").select("is_approved, headline, reviews(rating)").eq("user_id", user!.id).maybeSingle()).data,
@@ -34,6 +39,9 @@ function TutorDash() {
   return (
     <>
       <PageTitle title={`Hola, ${fullName.split(" ")[0]}`} text="Resumen de tu actividad como tutor." />
+
+      <ExpressTutorRadarReceiver onOpenRoom={(url, title) => setRoom({ url, title })} />
+
       {tp && !tp.is_approved && (
         <div className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl border border-warning/40 bg-warning/10 p-5">
           <AlertCircle className="size-5 shrink-0" />
@@ -65,6 +73,12 @@ function TutorDash() {
           <BookingList items={upcoming} viewerId={user?.id} />
         )}
       </section>
+
+      <VideoRoomDialog
+        roomUrl={room?.url ?? null}
+        title={room?.title ?? "Sala Virtual TUTEYA"}
+        onClose={() => setRoom(null)}
+      />
     </>
   );
 }
