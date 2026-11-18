@@ -90,7 +90,9 @@ export function SiteHeader() {
 
   const navItems = [
     { to: "/", label: "Inicio" },
-    { to: "/tutores", label: "Explorar Profesores" },
+    { to: "/tutores", label: "Profesores" },
+    { to: "/como-funciona", label: "Cómo funciona" },
+    { to: "/ensenar", label: "Enseñar" },
   ];
 
   return (
@@ -116,14 +118,14 @@ export function SiteHeader() {
           </div>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1.5 rounded-full bg-slate-100/90 p-1 border border-slate-200/70">
+        <nav className="hidden lg:flex items-center gap-1 rounded-full bg-slate-100/90 p-1 border border-slate-200/70">
           {navItems.map((item) => {
             const active = pathname === item.to;
             return (
               <Link
                 key={item.to}
                 to={item.to as any}
-                className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all duration-200 ${
+                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all duration-200 ${
                   active
                     ? "bg-white text-blue-600 shadow-sm"
                     : "text-slate-600 hover:text-slate-900"
@@ -135,7 +137,7 @@ export function SiteHeader() {
           })}
           <Link
             to={"/tutores" as any}
-            className="flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
+            className="flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
           >
             <Zap className="h-3.5 w-3.5 text-amber-500" />
             Tutor YA
@@ -192,14 +194,14 @@ export function SiteHeader() {
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Abrir menú"
-          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-700 md:hidden"
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-700 lg:hidden"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-slate-200 bg-white px-4 py-4 shadow-lg md:hidden animate-fade-up">
+        <div className="border-t border-slate-200 bg-white px-4 py-4 shadow-lg lg:hidden animate-fade-up">
           <div className="flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
@@ -245,26 +247,39 @@ export function SiteHeader() {
   );
 }
 
+export function SiteFooter() {
+  return (
+    <footer className="border-t border-slate-200 bg-white py-8 text-sm text-slate-500">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
+        <p className="font-medium text-slate-700">
+          © {new Date().getFullYear()} Tuteya Colombia · Todos los precios en Pesos Colombianos (COP).
+        </p>
+        <div className="flex items-center gap-4">
+          <Link to={"/tutores" as any} className="hover:text-blue-600 transition-colors">
+            Profesores
+          </Link>
+          <Link to={"/como-funciona" as any} className="hover:text-blue-600 transition-colors">
+            Cómo funciona
+          </Link>
+          <Link to={"/login" as any} className="hover:text-blue-600 transition-colors">
+            Acceso Demo
+          </Link>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
 export function SiteChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
       <SiteHeader />
       <main className="flex-1">{children}</main>
-      <footer className="border-t border-slate-200 bg-white py-8 text-sm text-slate-500">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-          <p className="font-medium text-slate-700">
-            © {new Date().getFullYear()} Tuteya Colombia · Todos los precios en Pesos Colombianos (COP).
-          </p>
-          <div className="flex items-center gap-4">
-            <Link to={"/tutores" as any} className="hover:text-blue-600 transition-colors">
-              Profesores
-            </Link>
-            <Link to={"/login" as any} className="hover:text-blue-600 transition-colors">
-              Acceso Demo
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
+
+// Exportaciones compatibles con el resto de rutas del proyecto
+export const PublicLayout = SiteChrome;
+export default SiteChrome;
