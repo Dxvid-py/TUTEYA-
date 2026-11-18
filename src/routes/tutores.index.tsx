@@ -1,255 +1,241 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Search, Star, SlidersHorizontal, Video } from "lucide-react";
-import { supabase } from "../integrations/supabase/client";
-import { TutorAvatar } from "../components/tutor-avatar";
-import { formatCOP, normalizeToCOP } from "../lib/format-cop";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { z } from "zod";
+import { BadgeCheck, MapPin, Search, SearchX, SlidersHorizontal, Video, X } from "lucide-react";
+import { PublicLayout } from "@/components/site-chrome";
+import { EmptyState, Stars } from "@/components/brand";
+import { TutorAvatar } from "@/components/tutor-avatar";
+import { AiTutorAssistant } from "@/components/ai-tutor-assistant";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { subjectsQuery, tutorsQuery } from "@/lib/queries";
+import { LEVELS, MODALITY_LABEL, WEEKDAYS, money } from "@/lib/format";
 
-export const Route = createFileRoute("/tutores/")({
-  component: TutorsCatalogPage,
+const search = z.object({
+  q: z.string().optional(),
+  materia: z.string().optional(),
+  nivel: z.string().optional(),
+  modalidad: z.enum(["virtual", "presencial"]).optional(),
+  ciudad: z.string().optional(),
+  max: z.number().optional(),
+  dia: z.number().optional(),
+  orden: z.enum(["rating", "precio_asc", "precio_desc", "experiencia"]).optional(),
 });
 
-interface TutorItem {
-  id: string;
-  fullName: string;
-  headline: string;
-  bio: string;
-  hourlyRateCOP: number;
-  rating: number;
-  avatarUrl: string | null;
-  subjects: string[];
-  online: boolean;
-}
+export const Route = createFileRoute("/tutores/")({
+  validateSearch: search,
+  loader: ({ context }) =>
+    Promise.all([context.queryClient.ensureQueryData(tutorsQuery), context.queryClient.ensureQueryData(subjectsQuery)]),
+  head: () => ({
+    meta: [
+      { title: "Buscar tutores — Tuteya" },
+      { name: "description", content: "Filtra tutores por materia, nivel educativo, modalidad, ciudad, precio y disponibilidad." },
+      { property: "og:title", content: "Buscar tutores — Tuteya" },
+      { property: "og:description", content: "Encuentra al tutor ideal en Tuteya." },
+    ],
+  }),
+  component: TutorsPage,
+});
 
-const FALLBACK_TUTORS: TutorItem[] = [
-  {
-    id: "22222222-2222-2222-2222-222222222222",
-    fullName: "Prof. Carlos Mendoza",
-    headline: "Ingeniero Electrónico · Matemáticas y Física",
-    bio: "Explicaciones paso a paso para parciales universitarios, cálculo diferencial, integral y álgebra lineal.",
-    hourlyRateCOP: 45000,
-    rating: 4.98,
-    avatarUrl:
-      "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400",
-    subjects: ["Cálculo", "Álgebra Lineal", "Física"],
-    online: true,
-  },
-  {
-    id: "33333333-3333-3333-3333-333333333333",
-    fullName: "Profa. Laura Restrepo",
-    headline: "Licenciada en Lenguas · Inglés Conversacional",
-    bio: "Clases dinámicas enfocadas en conversación, entrevistas laborales y certificación internacional.",
-    hourlyRateCOP: 50000,
-    rating: 4.95,
-    avatarUrl:
-      "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=400",
-    subjects: ["Inglés", "TOEFL", "Conversación"],
-    online: true,
-  },
-  {
-    id: "44444444-4444-4444-4444-444444444444",
-    fullName: "Prof. Andrés Felipe Quintero",
-    headline: "Desarrollador Full-Stack · Python, React y SQL",
-    bio: "Te ayudo a construir tus proyectos desde cero, depurar código y dominar bases de datos.",
-    hourlyRateCOP: 55000,
-    rating: 4.99,
-    avatarUrl:
-      "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=400",
-    subjects: ["Python", "SQL", "Desarrollo Web"],
-    online: false,
-  },
-];
+function TutorsPage() {
+  const s = Route.useSearch();
+  const navigate = useNavigate({ from: "/tutores/" });
+  const { data: tutors } = useSuspenseQuery(tutorsQuery);
+  const { data: subjects } = useSuspenseQuery(subjectsQuery);
+  const set = (patch: Partial<z.infer<typeof search>>) =>
+    navigate({ search: (prev) => ({ ...prev, ...patch }), replace: true });
 
-function TutorsCatalogPage() {
-  const [tutors, setTutors] = useState<TutorItem[]>(FALLBACK_TUTORS);
-  const [search, setSearch] = useState("");
-  const [maxPriceCOP, setMaxPriceCOP] = useState<number>(150000);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-
-    async function fetchTutors() {
-      try {
-        const { data, error } = await supabase
-          .from("tutor_profiles")
-          .select("id, user_id, headline, bio, hourly_rate, rating, subjects, profiles(full_name, avatar_url)")
-          .limit(30);
-
-        if (!active) return;
-
-        if (!error && data && data.length > 0) {
-          const mapped: TutorItem[] = data.map((row: any, index: number) => {
-            const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-            return {
-              id: row.user_id || row.id,
-              fullName: profile?.full_name || `Profesor Tuteya #${index + 1}`,
-              headline: row.headline || "Tutor Verificado Tuteya",
-              bio: row.bio || "Sesiones personalizadas 1 a 1 en vivo.",
-              hourlyRateCOP: normalizeToCOP(row.hourly_rate),
-              rating: Number(row.rating) || 4.9,
-              avatarUrl: profile?.avatar_url || null,
-              subjects:
-                Array.isArray(row.subjects) && row.subjects.length > 0
-                  ? row.subjects
-                  : ["Tutoría General"],
-              online: index % 2 === 0,
-            };
-          });
-          setTutors(mapped);
-        }
-      } catch {
-        // Conserva FALLBACK_TUTORS si aún no hay registros en Supabase
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    fetchTutors();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return tutors.filter((t) => {
-      const matchesPrice = t.hourlyRateCOP <= maxPriceCOP;
-      const matchesQuery =
-        !q ||
-        t.fullName.toLowerCase().includes(q) ||
-        t.headline.toLowerCase().includes(q) ||
-        t.subjects.some((s) => s.toLowerCase().includes(q));
-      return matchesPrice && matchesQuery;
+  const results = useMemo(() => {
+    const q = (s.q ?? "").toLowerCase().trim();
+    let r = tutors.filter((t) => {
+      if (q && !(t.name.toLowerCase().includes(q) || t.headline.toLowerCase().includes(q) || t.subjects.some((x) => x.name.toLowerCase().includes(q)))) return false;
+      if (s.materia && !t.subjects.some((x) => x.id === s.materia)) return false;
+      if (s.nivel && !t.levels.includes(s.nivel)) return false;
+      if (s.modalidad && !(t.modality === s.modalidad || t.modality === "ambas")) return false;
+      if (s.ciudad && !(t.city ?? "").toLowerCase().includes(s.ciudad.toLowerCase())) return false;
+      if (s.max && t.hourly_rate > s.max) return false;
+      if (s.dia !== undefined && !t.availabilityDays.includes(s.dia)) return false;
+      return true;
     });
-  }, [tutors, search, maxPriceCOP]);
+    const o = s.orden ?? "rating";
+    r = [...r].sort((a, b) =>
+      o === "precio_asc" ? a.hourly_rate - b.hourly_rate
+      : o === "precio_desc" ? b.hourly_rate - a.hourly_rate
+      : o === "experiencia" ? b.experience_years - a.experience_years
+      : (b.rating ?? 0) - (a.rating ?? 0),
+    );
+    return r;
+  }, [tutors, s]);
+
+  const hasFilters = Object.keys(s).some((k) => k !== "orden" && s[k as keyof typeof s] !== undefined);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between animate-fade-up">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900">
-            Encuentra tu profesor ideal
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Tarifas expresadas exclusivamente en Pesos Colombianos (COP) por hora de clase.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2 shadow-xs">
-            <Search className="h-4 w-4 text-slate-400" />
+    <PublicLayout>
+      <section className="border-b bg-card">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <h1 className="text-3xl font-extrabold sm:text-4xl">Encuentra a tu tutor</h1>
+          <p className="mt-2 text-muted-foreground">Busca por nombre o materia y ajusta los filtros a lo que necesitas.</p>
+          <div className="mt-6 flex max-w-2xl items-center gap-2 rounded-2xl border bg-background p-2">
+            <Search className="ml-2 size-5 text-muted-foreground" />
+            <label htmlFor="q" className="sr-only">Buscar</label>
             <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Filtrar por materia o nombre..."
-              className="w-56 text-sm focus:outline-none"
+              id="q"
+              defaultValue={s.q}
+              onChange={(e) => set({ q: e.target.value || undefined })}
+              placeholder="Nombre del tutor o materia"
+              className="h-10 flex-1 bg-transparent text-sm outline-none"
             />
           </div>
-
-          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3.5 py-2 shadow-xs">
-            <SlidersHorizontal className="h-4 w-4 text-blue-600" />
-            <span className="text-xs font-semibold text-slate-600">Máx:</span>
-            <select
-              value={maxPriceCOP}
-              onChange={(e) => setMaxPriceCOP(Number(e.target.value))}
-              className="bg-transparent text-xs font-bold text-slate-900 focus:outline-none"
-            >
-              <option value={45000}>{formatCOP(45000)}</option>
-              <option value={60000}>{formatCOP(60000)}</option>
-              <option value={80000}>{formatCOP(80000)}</option>
-              <option value={150000}>Todos los precios (COP)</option>
-            </select>
+          <div className="mt-6">
+            <AiTutorAssistant />
           </div>
         </div>
-      </div>
-
-      {loading ? (
-        <div className="grid gap-6 md:grid-cols-3">
-          {[1, 2, 3].map((n) => (
-            <div key={n} className="h-64 rounded-3xl bg-slate-200/70 animate-pulse" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center">
-          <p className="text-base font-bold text-slate-800">
-            No encontramos profesores con ese filtro.
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setSearch("");
-              setMaxPriceCOP(150000);
-            }}
-            className="mt-3 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white cursor-pointer"
-          >
-            Restablecer filtros
-          </button>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((tutor) => (
-            <article
-              key={tutor.id}
-              className="group flex flex-col justify-between rounded-3xl border border-slate-200 bg-white p-6 card-interactive"
-            >
-              <div>
-                <div className="flex items-start gap-4">
-                  <TutorAvatar
-                    name={tutor.fullName}
-                    src={tutor.avatarUrl}
-                    size="lg"
-                    online={tutor.online}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-base font-bold text-slate-900">
-                      {tutor.fullName}
-                    </h2>
-                    <p className="text-xs font-medium text-slate-500 mt-0.5">
-                      {tutor.headline}
-                    </p>
-                    <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700">
-                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                      {tutor.rating.toFixed(2)}
+      </section>
+      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[280px_1fr]">
+        <aside className="h-fit space-y-5 rounded-2xl border bg-card p-5 lg:sticky lg:top-24" aria-label="Filtros">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-bold"><SlidersHorizontal className="size-4" /> Filtros</h2>
+            {hasFilters && (
+              <button onClick={() => navigate({ search: {} })} className="flex items-center gap-1 text-xs font-semibold text-primary">
+                <X className="size-3" /> Limpiar
+              </button>
+            )}
+          </div>
+          <Filter label="Materia">
+            <Select value={s.materia ?? "all"} onValueChange={(v) => set({ materia: v === "all" ? undefined : v })}>
+              <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas</SelectItem>
+                {subjects.map((x) => <SelectItem key={x.id} value={x.id}>{x.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Filter>
+          <Filter label="Nivel educativo">
+            <Select value={s.nivel ?? "all"} onValueChange={(v) => set({ nivel: v === "all" ? undefined : v })}>
+              <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {LEVELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Filter>
+          <Filter label="Modalidad">
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1 text-xs font-semibold">
+              {[["", "Todas"], ["virtual", "Virtual"], ["presencial", "Presencial"]].map(([v, l]) => (
+                <button
+                  key={l}
+                  onClick={() => set({ modalidad: (v || undefined) as "virtual" | undefined })}
+                  className={`rounded-lg py-1.5 ${(s.modalidad ?? "") === v ? "bg-card shadow-soft" : "text-muted-foreground"}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Filter>
+          {s.modalidad === "presencial" && (
+            <Filter label="Ciudad">
+              <Input defaultValue={s.ciudad} onChange={(e) => set({ ciudad: e.target.value || undefined })} placeholder="Ej. Barranquilla" className="rounded-xl" />
+            </Filter>
+          )}
+          <Filter label={`Precio máximo por hora${s.max ? `: ${money(s.max)}` : ""}`}>
+            <input
+              type="range" min={5} max={100} step={5}
+              value={s.max ?? 100}
+              onChange={(e) => set({ max: Number(e.target.value) === 100 ? undefined : Number(e.target.value) })}
+              className="w-full accent-primary"
+              aria-label="Precio máximo"
+            />
+          </Filter>
+          <Filter label="Disponible el día">
+            <Select value={s.dia?.toString() ?? "all"} onValueChange={(v) => set({ dia: v === "all" ? undefined : Number(v) })}>
+              <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Cualquier día</SelectItem>
+                {WEEKDAYS.map((d, i) => <SelectItem key={d} value={String(i)}>{d}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Filter>
+        </aside>
+        <section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {results.length} {results.length === 1 ? "tutor encontrado" : "tutores encontrados"}
+            </p>
+            <Select value={s.orden ?? "rating"} onValueChange={(v) => set({ orden: v as "rating" })}>
+              <SelectTrigger className="w-52 rounded-xl"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="rating">Mejor calificados</SelectItem>
+                <SelectItem value="precio_asc">Precio: menor a mayor</SelectItem>
+                <SelectItem value="precio_desc">Precio: mayor a menor</SelectItem>
+                <SelectItem value="experiencia">Más experiencia</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {results.length === 0 ? (
+            <EmptyState
+              icon={SearchX}
+              title={tutors.length === 0 ? "Aún no hay tutores publicados" : "Sin resultados"}
+              text={tutors.length === 0 ? "Los tutores aparecerán aquí cuando un administrador apruebe sus perfiles." : "Prueba quitando algunos filtros."}
+              action={tutors.length === 0 ? <Button asChild className="rounded-full"><Link to="/registro" search={{ rol: "tutor" }}>Ser el primer tutor</Link></Button> : undefined}
+            />
+          ) : (
+            <ul className="space-y-4">
+              {results.map((t) => (
+                <li key={t.user_id} className="group rounded-2xl border bg-card p-5 shadow-soft transition-shadow hover:shadow-lift">
+                  <div className="flex flex-col gap-5 sm:flex-row">
+                    <TutorAvatar name={t.name} url={t.avatar_url} className="size-20 text-xl" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="flex items-center gap-1.5 text-lg font-bold">
+                            {t.name} <BadgeCheck className="size-4 text-primary" aria-label="Perfil verificado" />
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{t.headline}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-extrabold text-primary">{money(t.hourly_rate)}<span className="text-xs font-medium text-muted-foreground"> / hora</span></p>
+                          {t.rating !== null ? (
+                            <p className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground"><Stars value={t.rating} size={12} /> {t.rating.toFixed(1)} ({t.reviewCount})</p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">Sin reseñas aún</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {t.subjects.map((x) => (
+                          <span key={x.id} className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">{x.name}</span>
+                        ))}
+                      </div>
+                      <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{t.bio}</p>
+                      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                          <span>{t.experience_years} años de experiencia</span>
+                          <span className="flex items-center gap-1"><Video className="size-3.5" /> {MODALITY_LABEL[t.modality]}</span>
+                          {t.city && t.modality !== "virtual" && <span className="flex items-center gap-1"><MapPin className="size-3.5" /> {t.city}</span>}
+                        </div>
+                        <Button asChild className="rounded-full">
+                          <Link to="/tutores/$id" params={{ id: t.user_id }}>Ver perfil y reservar</Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </PublicLayout>
+  );
+}
 
-                <p className="mt-4 text-sm text-slate-600 line-clamp-3">{tutor.bio}</p>
-
-                <div className="mt-4 flex flex-wrap gap-1.5">
-                  {tutor.subjects.map((sub) => (
-                    <span
-                      key={sub}
-                      className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700"
-                    >
-                      {sub}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4">
-                <div>
-                  <span className="block text-[11px] text-slate-400">Valor sesión</span>
-                  <span className="text-lg font-extrabold text-slate-900">
-                    {formatCOP(tutor.hourlyRateCOP, { perHour: true })}
-                  </span>
-                </div>
-                <Link
-                  to={"/tutores/$id" as any}
-                  params={{ id: tutor.id } as any}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-600 transition-colors"
-                >
-                  <Video className="h-3.5 w-3.5" />
-                  Agendar
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+function Filter({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+      {children}
     </div>
   );
 }

@@ -17,12 +17,12 @@ const VERIFIED_PORTRAITS = [
   "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=400",
 ];
 
-const GRADIENTS: [string, string][] = [
-  ["#2563eb", "#7c3aed"],
-  ["#059669", "#0d9488"],
-  ["#ea580c", "#db2777"],
-  ["#4f46e5", "#0284c7"],
-  ["#9333ea", "#e11d48"],
+// Paleta esmeralda y dorado acorde a Tuteya
+const BRAND_GRADIENTS: [string, string][] = [
+  ["#047857", "#059669"],
+  ["#065f46", "#d97706"],
+  ["#0d9488", "#047857"],
+  ["#b45309", "#059669"],
 ];
 
 function hashName(name: string): number {
@@ -42,7 +42,7 @@ function buildFallbackSvg(name: string): string {
       ? `${parts[0][0]}${parts[1][0]}`.toUpperCase()
       : clean.slice(0, 2).toUpperCase();
 
-  const [c1, c2] = GRADIENTS[hashName(clean) % GRADIENTS.length];
+  const [c1, c2] = BRAND_GRADIENTS[hashName(clean) % BRAND_GRADIENTS.length];
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
     <defs>
       <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -52,7 +52,7 @@ function buildFallbackSvg(name: string): string {
     </defs>
     <rect width="200" height="200" rx="100" fill="url(#g)"/>
     <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle"
-      font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#ffffff">
+      font-family="Manrope, system-ui, sans-serif" font-size="72" font-weight="700" fill="#ffffff">
       ${initials}
     </text>
   </svg>`;
@@ -101,14 +101,16 @@ export function TutorAvatar({
             setImgSrc(fallbackDataUri);
           }
         }}
-        className="h-full w-full rounded-full object-cover ring-2 ring-white shadow-md transition-transform duration-300 group-hover:scale-105"
+        className="h-full w-full rounded-full object-cover ring-2 ring-emerald-600/20 shadow-sm transition-transform duration-300 group-hover:scale-105"
       />
       {online && (
         <span
           title="Disponible ahora"
-          className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse"
+          className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-background"
         />
       )}
     </div>
   );
 }
+
+export default TutorAvatar;

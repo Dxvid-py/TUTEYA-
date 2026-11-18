@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
-  GraduationCap,
   Menu,
   X,
-  Sparkles,
   LogOut,
   UserCheck,
   BookOpen,
-  Zap,
+  Sparkles,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { supabase } from "../integrations/supabase/client";
 
@@ -21,16 +21,27 @@ interface ActiveDemoUser {
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [currentUser, setCurrentUser] = useState<ActiveDemoUser | null>(null);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
+    const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    setDarkMode(document.documentElement.classList.contains("dark"));
+  }, []);
+
+  function toggleTheme() {
+    const next = !darkMode;
+    setDarkMode(next);
+    document.documentElement.classList.toggle("dark", next);
+  }
 
   useEffect(() => {
     let mounted = true;
@@ -89,8 +100,7 @@ export function SiteHeader() {
   }
 
   const navItems = [
-    { to: "/", label: "Inicio" },
-    { to: "/tutores", label: "Profesores" },
+    { to: "/tutores", label: "Buscar tutores" },
     { to: "/como-funciona", label: "Cómo funciona" },
     { to: "/ensenar", label: "Enseñar" },
   ];
@@ -99,57 +109,62 @@ export function SiteHeader() {
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "glass-header border-b border-slate-200/80 shadow-sm py-2.5"
-          : "bg-white/70 backdrop-blur-md border-b border-transparent py-4"
+          ? "bg-background/85 backdrop-blur-lg border-b border-border/80 shadow-sm py-2.5"
+          : "bg-background/65 backdrop-blur-md border-b border-border/40 py-3.5"
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link to={"/" as any} className="group flex items-center gap-2.5 focus:outline-none">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/25 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
-            <GraduationCap className="h-5 w-5" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-extrabold tracking-tight text-slate-900">
-              Tuteya
-            </span>
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-blue-600">
-              Tutorías en Colombia
-            </span>
-          </div>
+        {/* Logo original Tuteya */}
+        <Link
+          to={"/" as any}
+          className="group flex items-center gap-2.5 focus:outline-none"
+        >
+          <img
+            src="/tuteya-mark.svg"
+            alt="Tuteya"
+            className="h-9 w-9 object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+          <span className="font-serif text-2xl font-bold tracking-tight text-foreground">
+            Tuteya
+          </span>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-1 rounded-full bg-slate-100/90 p-1 border border-slate-200/70">
+        {/* Navegación Desktop dinámica */}
+        <nav className="hidden md:flex items-center gap-1 rounded-full border border-border/70 bg-muted/60 p-1">
           {navItems.map((item) => {
-            const active = pathname === item.to;
+            const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
             return (
               <Link
                 key={item.to}
                 to={item.to as any}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all duration-200 ${
+                className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
                   active
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-slate-600 hover:text-slate-900"
+                    ? "bg-background text-emerald-700 dark:text-emerald-400 font-semibold shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {item.label}
               </Link>
             );
           })}
-          <Link
-            to={"/tutores" as any}
-            className="flex items-center gap-1 rounded-full px-3.5 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-50 transition-colors"
-          >
-            <Zap className="h-3.5 w-3.5 text-amber-500" />
-            Tutor YA
-          </Link>
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        {/* Controles derecha */}
+        <div className="hidden md:flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label="Cambiar tema"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-background text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
           {currentUser ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
               <Link
                 to={(currentUser.role === "tutor" ? "/profesor" : "/estudiante") as any}
-                className="flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20 transition-colors"
               >
                 {currentUser.role === "tutor" ? (
                   <BookOpen className="h-3.5 w-3.5" />
@@ -157,15 +172,14 @@ export function SiteHeader() {
                   <UserCheck className="h-3.5 w-3.5" />
                 )}
                 <span>
-                  {currentUser.role === "tutor" ? "Panel Profe" : "Panel Estudiante"}:{" "}
+                  {currentUser.role === "tutor" ? "Panel Profe" : "Panel Estudiante"} ·{" "}
                   {currentUser.fullName.split(" ")[0]}
                 </span>
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                title="Cerrar sesión"
-                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
               >
                 <LogOut className="h-3.5 w-3.5" />
                 Salir
@@ -175,58 +189,60 @@ export function SiteHeader() {
             <>
               <Link
                 to={"/login" as any}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                className="rounded-full px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
               >
-                Iniciar sesión
+                Ingresar
               </Link>
               <Link
                 to={"/login" as any}
-                className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-600/20 hover:shadow-lg hover:brightness-110 transition-all"
+                className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-emerald-800 transition-all"
               >
-                <Sparkles className="h-4 w-4" />
-                Probar Demo
+                <Sparkles className="h-3.5 w-3.5 text-amber-300" />
+                Demo Profe / Estudiante
               </Link>
             </>
           )}
         </div>
 
+        {/* Botón móvil */}
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Abrir menú"
-          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2 text-slate-700 lg:hidden"
+          className="inline-flex items-center justify-center rounded-xl border border-border bg-background p-2 text-foreground md:hidden"
         >
           {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
 
+      {/* Menú móvil */}
       {mobileOpen && (
-        <div className="border-t border-slate-200 bg-white px-4 py-4 shadow-lg lg:hidden animate-fade-up">
+        <div className="border-t border-border bg-background px-4 py-4 shadow-md md:hidden">
           <div className="flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.to}
                 to={item.to as any}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
               >
                 {item.label}
               </Link>
             ))}
-            <hr className="my-1 border-slate-100" />
+            <hr className="my-1 border-border" />
             {currentUser ? (
               <>
                 <Link
                   to={(currentUser.role === "tutor" ? "/profesor" : "/estudiante") as any}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-xl bg-blue-50 px-3 py-2.5 text-sm font-bold text-blue-700"
+                  className="rounded-xl bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300"
                 >
-                  Ir a mi panel ({currentUser.role === "tutor" ? "Profesor" : "Estudiante"})
+                  Mi panel ({currentUser.role === "tutor" ? "Profesor" : "Estudiante"})
                 </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="rounded-xl bg-rose-50 px-3 py-2.5 text-left text-sm font-semibold text-rose-600"
+                  className="rounded-xl px-3 py-2 text-left text-sm font-medium text-destructive"
                 >
                   Cerrar sesión
                 </button>
@@ -235,7 +251,7 @@ export function SiteHeader() {
               <Link
                 to={"/login" as any}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-xl bg-blue-600 px-3 py-2.5 text-center text-sm font-bold text-white"
+                className="rounded-xl bg-emerald-700 px-3 py-2.5 text-center text-sm font-semibold text-white"
               >
                 Acceso Rápido Demo (Profe / Estudiante)
               </Link>
@@ -249,20 +265,23 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-slate-200 bg-white py-8 text-sm text-slate-500">
+    <footer className="border-t border-border bg-background py-8 text-sm text-muted-foreground">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6 lg:px-8">
-        <p className="font-medium text-slate-700">
-          © {new Date().getFullYear()} Tuteya Colombia · Todos los precios en Pesos Colombianos (COP).
-        </p>
-        <div className="flex items-center gap-4">
-          <Link to={"/tutores" as any} className="hover:text-blue-600 transition-colors">
-            Profesores
+        <div className="flex items-center gap-2">
+          <img src="/tuteya-mark.svg" alt="Tuteya" className="h-6 w-6 object-contain" />
+          <span className="font-medium text-foreground">
+            © {new Date().getFullYear()} Tuteya Colombia · Tarifas en COP
+          </span>
+        </div>
+        <div className="flex items-center gap-5">
+          <Link to={"/tutores" as any} className="hover:text-foreground transition-colors">
+            Tutores
           </Link>
-          <Link to={"/como-funciona" as any} className="hover:text-blue-600 transition-colors">
+          <Link to={"/como-funciona" as any} className="hover:text-foreground transition-colors">
             Cómo funciona
           </Link>
-          <Link to={"/login" as any} className="hover:text-blue-600 transition-colors">
-            Acceso Demo
+          <Link to={"/ensenar" as any} className="hover:text-foreground transition-colors">
+            Enseñar
           </Link>
         </div>
       </div>
@@ -270,9 +289,9 @@ export function SiteFooter() {
   );
 }
 
-export function SiteChrome({ children }: { children: React.ReactNode }) {
+export function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
@@ -280,6 +299,5 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Exportaciones compatibles con el resto de rutas del proyecto
-export const PublicLayout = SiteChrome;
-export default SiteChrome;
+export const SiteChrome = PublicLayout;
+export default PublicLayout;

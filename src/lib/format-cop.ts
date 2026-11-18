@@ -5,10 +5,6 @@ const copFormatter = new Intl.NumberFormat("es-CO", {
   maximumFractionDigits: 0,
 });
 
-/**
- * Normaliza montos legacy (< 1000) a pesos colombianos reales
- * y formatea siempre como "$ 45.000 COP".
- */
 export function normalizeToCOP(amount: number | string | null | undefined): number {
   const numeric =
     typeof amount === "string"
@@ -31,5 +27,5 @@ export function formatCOP(
   const value = normalizeToCOP(amount);
   const formatted = copFormatter.format(value);
   const base = options?.compact ? formatted : `${formatted} COP`;
-  return options?.perHour ? `${base} / hora` : base;
+  return options?.perHour ? `${base} / h` : base;
 }
